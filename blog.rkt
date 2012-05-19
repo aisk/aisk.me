@@ -55,17 +55,17 @@
                  "order by date_create limit $1, $2;")
                 start
                 limit)])
-    (display (length rets))
     (map vector->article rets)))
 ;(get-articles 0 10)
 
-(define (get-comments start limit)
+(define (get-comments article-id start limit)
   (let* ([conn (get-connection)]
          [rets (query-rows conn
                            (string-append
-                            "select * from comment where deleted=0 "
-                            "order by date_create limit $1, $2;")
-                           start limit)])
+                            "select * from comment where deleted= 0 "
+                            "and article_id = $1 "
+                            "order by date_create limit $2, $3;")
+                           article-id start limit)])
     (map vector->comment rets)))
 ;(get-comments 0 100)
 
@@ -75,7 +75,7 @@
    [("") root-view]
    [("article" (integer-arg)) post-view]))
 
-;; Templates
+;; Renders
 (define (render-base content)
   `(html (head
           (title "XXX")
@@ -84,17 +84,17 @@
                  (type "text/css"))))
          (body
           (div ((id "bg"))
-               (div ((id "pagewrap"))
-                    (div ((id "header"))
-                         (div ((id "site-logo"))
-                              (a ((href "/"))
+               (div ([id "pagewrap"])
+                    (div ([id "header"])
+                         (div ([id "site-logo"])
+                              (a ([href "/"])
                                  "XXXXXXXXX"))
-                         (div ((id "site-description"))
+                         (div ([id "site-description"])
                               "Yet another aisk's blog"))
-                    (div ((id "layout") (class "clearfix sidebar1"))
+                    (div ([id "layout"] [class "clearfix sidebar1"])
                          ,content
-                         (div ((id "sidebar"))))
-                    (div ((id "footer"))))))))
+                         (div ([id "sidebar"])))
+                    (div ([id "footer"])))))))
 
 
 (define (render-article a-article)
@@ -113,22 +113,85 @@
                    (a ([href ,a-url]) ,a-title))
                (p ,a-content)))))
 
-(define (render-articles articles)
-  (map render-article articles))
+(define (render-comment a-comment)
+  `(li ([class "comment"])
+       (p ([class "comment-author"])
+          (img ([src "http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=54"]
+                [class "avatar"]
+                [width "54"]
+                [height "54"]))
+          (cite (a ([href "#"]
+                    [rel "external nofollow"]
+                    [class "url"])
+                   "XXXXXX"))
+          (br)
+          (small ([class "comment-time"])
+                 (strong "Jan 17, 2011")
+                 " @ 07:27:52"))
+       (div ([class "commententry"])
+            (p ,(comment-content a-comment))
+            )
+       ))
+
+(define (render-comments comments)
+  `(div ([id "comments"] [class "commentwrap"])
+        (h4 ([class "comment-title"]) "Comments")
+        (ol ([class "commentlist"])
+            ,@(map render-comment comments))
+        ,(render-commentform)
+        ))
+
+(define (render-commentform)
+  `(div ([id "respond"])
+        (h3 ([id "reply-title"]) "Leave a Reply")
+        (form ([action "."]
+               [method "post"]
+               [id "commentform"])
+              (p ([class "comment-form-author"])
+                 (input ([id "author"]
+                         [name "author"]
+                         [type "text"]
+                         [size "30"])
+                        (label ([for "author"]) "Your Name"))
+                 (span "*"))
+              (p ([class "comment-form-email"])
+                 (input ([id "email"]
+                         [name "email"]
+                         [type "text"]
+                         [size "30"])
+                        (label ([for "email"]) "Your Email"))
+                 (span "*"))
+              (p ([class "comment-form-url"])
+                 (input ([id "url"]
+                         [name "url"]
+                         [type "text"]
+                         [size "30"])
+                        (label ([for "url"]) "Your Website")))
+              (p ([class "comment-form-comment"])
+                 (textarea ([id "comment"]
+                            [name "comment"]
+                            [cols "45"]
+                            [rows "8"]) ""))
+              (p ([class "form-submit"])
+                 (input ([id "submit"]
+                         [name "submit"]
+                         [type "submit"]
+                         [value "Post Comment"]))))))
 
 ;; View functions
 (define (root-view req)
   (let* ([articles (get-articles 0 100)])
-    (display (list? (render-articles articles)))
     (response/xexpr
      (render-base `(div ([id "content"] [class "list-post"])
                         ,@(map render-article articles))))))
 
 (define (post-view req post-id)
-  (let ([a-article (get-article post-id)])
+  (let ([a-article (get-article post-id)]
+        [comments (get-comments post-id 0 100)])
     (response/xexpr
      (render-base `(div ([id "content"] [class "list-post"])
-                        ,(render-article a-article))))))
+                        ,(render-article a-article)
+                        ,(render-comments comments))))))
 
 ;; Main
 (define (start req)
