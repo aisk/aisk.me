@@ -80,7 +80,7 @@
   `(html (head
           (title "XXX")
           (link ((rel "stylesheet")
-                 (href "http://themify.me/demo/themes/koi/wp-content/themes/koi/style.css")
+                 (href "/style.css")
                  (type "text/css"))))
          (body
           (div ((id "bg"))
@@ -116,7 +116,7 @@
 (define (render-comment a-comment)
   `(li ([class "comment"])
        (p ([class "comment-author"])
-          (img ([src "http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=54"]
+          (img ([src "/images/head_54.png"]
                 [class "avatar"]
                 [width "54"]
                 [height "54"]))
@@ -205,5 +205,7 @@
 (serve/servlet start
                #:port 8080
                #:servlet-regexp #rx""
+               #:extra-files-paths (list
+                                    (build-path cur-path "static"))
                #:launch-browser? #f)
 
