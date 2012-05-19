@@ -1,5 +1,6 @@
 #lang racket
 (require racket/date
+         racket/pretty
          web-server/servlet
          web-server/servlet-env
          web-server/dispatch
@@ -54,6 +55,7 @@
                  "order by date_create limit $1, $2;")
                 start
                 limit)])
+    (display (length rets))
     (map vector->article rets)))
 ;(get-articles 0 10)
 
@@ -97,29 +99,36 @@
 
 (define (render-article a-article)
   (let* ([a-title (article-title a-article)]
-         [a-content (article-content a-article)])
-    `(div ((id "content") (class "list-post"))
-          (div ((class "post clearfix"))
-               (div ((class "post-content"))
-                    (p ((class "post-date"))
-                       (span ((class "day")) "18")
-                       (span ((class "month")) "May")
-                       (span ((class "year")) "2011"))
-                    (h1 ((class "post-title"))
-                        ,a-title)
-                    (p ,a-content))))))
+         [a-content (article-content a-article)]
+         [a-url (string-append
+                 "/article/"
+                 (number->string (article-id a-article)))])
+    `(div ([class "post clearfix"])
+          (div ([class "post-content"])
+               (p ((class "post-date"))
+                  (span ((class "day")) "18")
+                  (span ((class "month")) "May")
+                  (span ((class "year")) "2011"))
+               (h1 ((class "post-title"))
+                   (a ([href ,a-url]) ,a-title))
+               (p ,a-content)))))
 
+(define (render-articles articles)
+  (map render-article articles))
 
-  
 ;; View functions
 (define (root-view req)
-  (response/xexpr
-   (render-base `())))
+  (let* ([articles (get-articles 0 100)])
+    (display (list? (render-articles articles)))
+    (response/xexpr
+     (render-base `(div ([id "content"] [class "list-post"])
+                        ,@(map render-article articles))))))
 
 (define (post-view req post-id)
   (let ([a-article (get-article post-id)])
     (response/xexpr
-     (render-base (render-article a-article)))))
+     (render-base `(div ([id "content"] [class "list-post"])
+                        ,(render-article a-article))))))
 
 ;; Main
 (define (start req)
