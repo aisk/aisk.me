@@ -29,14 +29,14 @@
   (article [vector-ref vec 0]
            [vector-ref vec 1]
            [vector-ref vec 2]
-           [vector-ref vec 3]
+           (seconds->date [vector-ref vec 3])
            [vector-ref vec 4]))
 
 (define (vector->comment vec)
   (comment [vector-ref vec 0]
            [vector-ref vec 1]
            [vector-ref vec 2]
-           [vector-ref vec 3]
+           (seconds->date [vector-ref vec 3])
            [vector-ref vec 4]))
 
 (define (get-article id)
@@ -52,7 +52,7 @@
          [rets (query-rows conn
                 (string-append
                  "select * from article where deleted = 0 "
-                 "order by date_create limit $1, $2;")
+                 "order by date_create desc limit $1, $2;")
                 start
                 limit)])
     (map vector->article rets)))

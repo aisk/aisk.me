@@ -1,1 +1,1 @@
-A simple personal blog engine runs on racket.
+A simple personal blog engine runs on racket/plt-scheme.
