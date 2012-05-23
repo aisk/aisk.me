@@ -100,15 +100,18 @@
 (define (render-article a-article)
   (let* ([a-title (article-title a-article)]
          [a-content (article-content a-article)]
+         [a-date-create (article-date-create a-article)]
          [a-url (string-append
                  "/article/"
                  (number->string (article-id a-article)))])
     `(div ([class "post clearfix"])
           (div ([class "post-content"])
                (p ((class "post-date"))
-                  (span ((class "day")) "18")
+                  (span ((class "day"))
+                        ,(number->string (date-day a-date-create)))
                   (span ((class "month")) "May")
-                  (span ((class "year")) "2011"))
+                  (span ((class "year"))
+                        ,(number->string (date-year a-date-create))))
                (h1 ((class "post-title"))
                    (a ([href ,a-url]) ,a-title))
                (p ,a-content)))))
