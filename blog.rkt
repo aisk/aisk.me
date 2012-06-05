@@ -13,17 +13,17 @@
 ;; Models
 (define (get-connection)
   (sqlite3-connect
-   #:database (string-append
-               (path->string cur-path)
-               "rktblog.db")))
+    #:database (string-append
+                 (path->string cur-path)
+                 "rktblog.db")))
 
 (struct article
-  (id title content date-create deleted)
-  #:mutable)
+        (id title content date-create deleted)
+        #:mutable)
 
 (struct comment
-  (id article-id content date-create deleted)
-  #:mutable)
+        (id article-id content date-create deleted)
+        #:mutable)
 
 (define (vector->article vec)
   (article [vector-ref vec 0]
@@ -50,11 +50,11 @@
 (define (get-articles start limit)
   (let* ([conn (get-connection)]
          [rets (query-rows conn
-                (string-append
-                 "select * from article where deleted = 0 "
-                 "order by date_create desc limit $1, $2;")
-                start
-                limit)])
+                           (string-append
+                             "select * from article where deleted = 0 "
+                             "order by date_create desc limit $1, $2;")
+                           start
+                           limit)])
     (map vector->article rets)))
 ;(get-articles 0 10)
 
@@ -62,9 +62,9 @@
   (let* ([conn (get-connection)]
          [rets (query-rows conn
                            (string-append
-                            "select * from comment where deleted= 0 "
-                            "and article_id = $1 "
-                            "order by date_create limit $2, $3;")
+                             "select * from comment where deleted= 0 "
+                             "and article_id = $1 "
+                             "order by date_create limit $2, $3;")
                            article-id start limit)])
     (map vector->comment rets)))
 ;(get-comments 0 100)
@@ -72,29 +72,29 @@
 ;; Url dispatch
 (define-values (url-dispatch site-url)
   (dispatch-rules
-   [("") root-view]
-   [("article" (integer-arg)) post-view]))
+    [("") root-view]
+    [("article" (integer-arg)) post-view]))
 
 ;; Renders
 (define (render-base content)
   `(html (head
-          (title "XXX")
-          (link ((rel "stylesheet")
-                 (href "/style.css")
-                 (type "text/css"))))
+           (title "XXX")
+           (link ((rel "stylesheet")
+                  (href "/style.css")
+                  (type "text/css"))))
          (body
-          (div ((id "bg"))
-               (div ([id "pagewrap"])
-                    (div ([id "header"])
-                         (div ([id "site-logo"])
-                              (a ([href "/"])
-                                 "XXXXXXXXX"))
-                         (div ([id "site-description"])
-                              "Yet another aisk's blog"))
-                    (div ([id "layout"] [class "clearfix sidebar1"])
-                         ,content
-                         (div ([id "sidebar"])))
-                    (div ([id "footer"])))))))
+           (div ((id "bg"))
+                (div ([id "pagewrap"])
+                     (div ([id "header"])
+                          (div ([id "site-logo"])
+                               (a ([href "/"])
+                                  "XXXXXXXXX"))
+                          (div ([id "site-description"])
+                               "Yet another aisk's blog"))
+                     (div ([id "layout"] [class "clearfix sidebar1"])
+                          ,content
+                          (div ([id "sidebar"])))
+                     (div ([id "footer"])))))))
 
 
 (define (render-article a-article)
@@ -102,8 +102,8 @@
          [a-content (article-content a-article)]
          [a-date-create (article-date-create a-article)]
          [a-url (string-append
-                 "/article/"
-                 (number->string (article-id a-article)))])
+                  "/article/"
+                  (number->string (article-id a-article)))])
     `(div ([class "post clearfix"])
           (div ([class "post-content"])
                (p ((class "post-date"))
@@ -147,7 +147,7 @@
 (define (render-commentform)
   `(div ([id "respond"])
         (h3 ([id "reply-title"]) "Leave a Reply")
-        (form ([action "."]
+        (form ([action ""]
                [method "post"]
                [id "commentform"])
               (p ([class "comment-form-author"])
@@ -185,30 +185,34 @@
 (define (root-view req)
   (let* ([articles (get-articles 0 100)])
     (response/xexpr
-     (render-base `(div ([id "content"] [class "list-post"])
-                        ,@(map render-article articles))))))
+      (render-base `(div ([id "content"] [class "list-post"])
+                         ,@(map render-article articles))))))
 
 (define (post-view req post-id)
-  (let ([a-article (get-article post-id)]
-        [comments (get-comments post-id 0 100)])
-    (response/xexpr
-     (render-base `(div ([id "content"] [class "list-post"])
-                        ,(render-article a-article)
-                        ,(render-comments comments))))))
+  (cond
+    [(equal? (request-method req) #"GET")
+     (let ([a-article (get-article post-id)]
+           [comments (get-comments post-id 0 100)])
+       (response/xexpr
+         (render-base `(div ([id "content"] [class "list-post"])
+                            ,(render-article a-article)
+                            ,(render-comments comments)))))]
+    [(equal? (request-method req) #"POST")
+     (redirect-to (url->string (request-uri req)))]))
 
 ;; Main
 (define (start req)
   (display (string-append
-			(date->string (current-date))
-			": "
-			(url->string (request-uri req)) 
-			"\n"))
+             (date->string (current-date))
+             ": "
+             (url->string (request-uri req)) 
+             "\n"))
   (url-dispatch req))
 
 (serve/servlet start
                #:port 8080
                #:servlet-regexp #rx""
                #:extra-files-paths (list
-                                    (build-path cur-path "static"))
+                                     (build-path cur-path "static"))
                #:launch-browser? #f)
 
