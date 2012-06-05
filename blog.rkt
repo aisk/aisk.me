@@ -200,19 +200,30 @@
     [(equal? (request-method req) #"POST")
      (redirect-to (url->string (request-uri req)))]))
 
-;; Main
-(define (start req)
-  (display (string-append
-             (date->string (current-date))
-             ": "
-             (url->string (request-uri req)) 
-             "\n"))
-  (url-dispatch req))
 
-(serve/servlet start
-               #:port 8080
-               #:servlet-regexp #rx""
-               #:extra-files-paths (list
-                                     (build-path cur-path "static"))
-               #:launch-browser? #f)
+(define (can-parse-comment? bindings)
+  (and (exists-binding? 'author bindings)
+       (exists-binding? 'email bindings)
+       (exists-binding? 'comment bindings)))
+
+(define (parse-comment bindings)
+  (comment (extract-binding/single 'author bindings)
+           (extract-binding/single 'email bindings)
+           (extract-binding/single 'comment bindings)))
+
+  ;; Main
+  (define (start req)
+    (display (string-append
+               (date->string (current-date))
+               ": "
+               (url->string (request-uri req)) 
+               "\n"))
+    (url-dispatch req))
+
+  (serve/servlet start
+                 #:port 8080
+                 #:servlet-regexp #rx""
+                 #:extra-files-paths (list
+                                       (build-path cur-path "static"))
+                 #:launch-browser? #f)
 
