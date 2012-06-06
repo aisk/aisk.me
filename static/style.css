@@ -109,14 +109,14 @@ textarea {
 	line-height: 150%;
 	width: 96%;
 }
-input[type=text], input[type=password], textarea {
+input[type=text], input[type=url], input[type=email], input[type=password], textarea {
 	background: #fffcd6;
 	border: none;
 	border-bottom: solid 1px #d1ad80;
 	padding: 5px 7px;
 	color: #666;
 }
-textarea:focus, input[type=password]:focus, input[type=text]:focus {
+textarea:focus, input[type=url]:focus, input[type=email]:focus, input[type=password]:focus, input[type=text]:focus {
 	background: #fff;
 	outline: none;
 	color: #000;
@@ -992,7 +992,7 @@ COMMENTS
 	text-decoration: underline;
 }
 
-#commentform input[type=text] {
+#commentform input[type=text], #commentform input[type=email], #commentform input[type=url]{
 	width: 210px;
 	margin-right: 5px;
 	padding: 5px 7px;
