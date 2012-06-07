@@ -206,6 +206,7 @@
 (define (root-view req)
   (let* ([articles (get-articles 0 100)])
     (response/xexpr
+      #:preamble #"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
       (render-base `(div ([id "content"] [class "list-post"])
                          ,@(map render-article articles))))))
 
@@ -215,6 +216,7 @@
      (let ([a-article (get-article article-id)]
            [comments (get-comments article-id 0 100)])
        (response/xexpr
+         #:preamble #"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
          (render-base `(div ([id "content"] [class "list-post"])
                             ,(render-article a-article)
                             ,(render-comments comments)))))]
