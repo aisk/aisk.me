@@ -26,21 +26,20 @@
 ; The response/xexpr eat all elements behind cdata,
 ; a hack use xexpr->string to void this.
 (define (render-to-response
-         xexpr
-         #:code [code 200] 
-         #:message [message #"Okay"]
-         #:seconds [seconds (current-seconds)]
-         #:mime-type [mime-type TEXT/HTML-MIME-TYPE]
-         #:cookies [cooks empty]
-         #:headers [hdrs empty]
-         #:preamble [preamble #""])
+          xexpr
+          #:code [code 200] 
+          #:message [message #"Okay"]
+          #:seconds [seconds (current-seconds)]
+          #:mime-type [mime-type TEXT/HTML-MIME-TYPE]
+          #:cookies [cooks empty]
+          #:headers [hdrs empty]
+          #:preamble [preamble #""])
   (response
-   code message seconds mime-type 
-   ; rfc2109 also recommends some cache-control stuff here for cookies
-   (append hdrs (map cookie->header cooks))
-   (λ (out)
-     (write-bytes preamble out)
-     (write-string (xexpr->string xexpr) out))))
+    code message seconds mime-type 
+    (append hdrs (map cookie->header cooks))
+    (lambda (out)
+      (write-bytes preamble out)
+      (write-string (xexpr->string xexpr) out))))
 
 ;; Models
 (define (get-connection)
@@ -123,9 +122,9 @@
 (define (render-base content)
   `(html (head
            (title "XXX")
-           (link ((rel "stylesheet")
-                  (href "/style.css")
-                  (type "text/css"))))
+           (link ([rel "stylesheet"]
+                  [href "/style.css"]
+                  [type "text/css"])))
          (body
            (div ((id "bg"))
                 (div ([id "pagewrap"])
@@ -137,9 +136,24 @@
                                "Yet another aisk's blog"))
                      (div ([id "layout"] [class "clearfix sidebar1"])
                           ,content
-                          (div ([id "sidebar"])))
+                          (div ([id "sidebar"])
+                               ,(render-sidebar)))
                      (div ([id "footer"])))))))
 
+(define (render-sidebar)
+  `(div ([class "widget"])
+        (h4 ([class "widgettitle"])
+            "I'm the sidebar")
+        (ul ([class "twitter-list"])
+          (li ([class "twitter-item"])
+               "Today's weather muhaha"
+               (em ([class "twitter-timestamp"]) "2012/6/10"))
+          (li ([class "twitter-item"])
+               "Tomorrow's weather muhaha"
+               (em ([class "twitter-timestamp"]) "2012/6/10"))
+          (li ([class "twitter-item"])
+               "The day after tomorrow's weather muhaha"
+               (em ([class "twitter-timestamp"]) "2012/6/10")))))
 
 (define (render-article a-article)
   (let* ([a-title (article-title a-article)]
