@@ -106,9 +106,9 @@
   (let ([conn (get-connection)])
     (query-exec 
       conn 
-      "insert into comment "
-      "(article_id,email,author,website,content) "
-      "values ($1,$2,$3,$4,$5)"
+      "insert into comment \
+      (article_id,email,author,website,content) \
+      values ($1,$2,$3,$4,$5)"
       article-id email author website content))
   )
 
