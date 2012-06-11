@@ -180,7 +180,7 @@
                          [name "email"]
                          [type "email"]
                          [size "30"]
-                         [maxlength "20"]
+                         [maxlength "50"]
                          [required ""])
                         (label ([for "email"]) "Your Email"))
                  (span "*"))
