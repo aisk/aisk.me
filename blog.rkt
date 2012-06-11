@@ -11,6 +11,12 @@
 ;; Utils
 (define cur-path (find-system-path 'orig-dir))
 
+(define (get-intro a-content)
+  (first (regexp-split #rx"<!--more-->" a-content)))
+
+(define (format-content a-content)
+  (string-join (regexp-split "\n" a-content) "</p><p>"))
+
 ; Hack for safe html output
 (define (render-safe a-xexpr)
   (make-cdata #f #f a-xexpr))
@@ -57,7 +63,7 @@
 (define (vector->article vec)
   (article [vector-ref vec 0]
            [vector-ref vec 1]
-           [vector-ref vec 2]
+           (format-content [vector-ref vec 2])
            (seconds->date [vector-ref vec 3])
            [vector-ref vec 4]))
 
@@ -67,7 +73,7 @@
            [vector-ref vec 2]
            [vector-ref vec 3]
            [vector-ref vec 4]
-           [vector-ref vec 5]
+           (format-content [vector-ref vec 5])
            (seconds->date [vector-ref vec 6])
            [vector-ref vec 7]))
 
@@ -145,17 +151,17 @@
         (h4 ([class "widgettitle"])
             "I'm the sidebar")
         (ul ([class "twitter-list"])
-          (li ([class "twitter-item"])
-               "Today's weather muhaha"
-               (em ([class "twitter-timestamp"]) "2012/6/10"))
-          (li ([class "twitter-item"])
-               "Tomorrow's weather muhaha"
-               (em ([class "twitter-timestamp"]) "2012/6/10"))
-          (li ([class "twitter-item"])
-               "The day after tomorrow's weather muhaha"
-               (em ([class "twitter-timestamp"]) "2012/6/10")))))
+            (li ([class "twitter-item"])
+                "Today's weather muhaha"
+                (em ([class "twitter-timestamp"]) "2012/6/10"))
+            (li ([class "twitter-item"])
+                "Tomorrow's weather muhaha"
+                (em ([class "twitter-timestamp"]) "2012/6/10"))
+            (li ([class "twitter-item"])
+                "The day after tomorrow's weather muhaha"
+                (em ([class "twitter-timestamp"]) "2012/6/10")))))
 
-(define (render-article a-article)
+(define (render-article a-article only-intro?)
   (let* ([a-title (article-title a-article)]
          [a-content (article-content a-article)]
          [a-date-create (article-date-create a-article)]
@@ -172,7 +178,9 @@
                         ,(number->string (date-year a-date-create))))
                (h1 ((class "post-title"))
                    (a ([href ,a-url]) ,a-title))
-               (p ,(render-safe a-content))))))
+               (p ,(render-safe
+                     (if only-intro? (get-intro a-content)
+                       a-content)))))))
 
 (define (render-comment a-comment)
   `(li ([class "comment"])
@@ -248,18 +256,20 @@
   (let* ([articles (get-articles 0 100)])
     (render-response
       (render-base `(div ([id "content"] [class "list-post"])
-                         ,@(map render-article articles))))))
+                         ,@(map render-article
+                                articles
+                                (build-list
+                                  (length articles)
+                                  (lambda (x) #t))))))))
 
 (define (article-view req article-id)
   (cond
     [(equal? (request-method req) #"GET")
      (let ([a-article (get-article article-id)]
            [comments (get-comments article-id 0 100)])
-       (display 111111111111111111111111)
-       (display (xexpr->string (render-article a-article)))
        (render-response
          (render-base `(div ([id "content"] [class "list-post"])
-                            ,(render-article a-article)
+                            ,(render-article a-article #f)
                             ,(render-comments comments)))))]
     [(equal? (request-method req) #"POST")
      (if (can-save-comment? (request-bindings req))
