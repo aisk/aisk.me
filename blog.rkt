@@ -1,14 +1,45 @@
 #lang racket
-(require racket/date
+(require (only-in xml make-cdata)
+         (only-in xml xexpr->string)
+         racket/date
          racket/pretty
          web-server/servlet
          web-server/servlet-env
          web-server/dispatch
-         web-server/templates
          (planet ryanc/db:1:5)) ; Fuck the db module
 
 ;; Utils
 (define cur-path (find-system-path 'orig-dir))
+
+; Hack for safe html output
+(define (render-safe a-xexpr)
+  (make-cdata #f #f a-xexpr))
+
+; Hack for add a dtd for a webpage
+(define (render-response a-xexpr)
+  (render-to-response
+    #:preamble #"<!DOCTYPE html PUBLIC \
+    \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \
+    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+    a-xexpr))
+
+; The response/xexpr eat all elements behind cdata,
+; a hack use xexpr->string to void this.
+(define (render-to-response
+          xexpr
+          #:code [code 200] 
+          #:message [message #"Okay"]
+          #:seconds [seconds (current-seconds)]
+          #:mime-type [mime-type TEXT/HTML-MIME-TYPE]
+          #:cookies [cooks empty]
+          #:headers [hdrs empty]
+          #:preamble [preamble #""])
+  (response
+    code message seconds mime-type 
+    (append hdrs (map cookie->header cooks))
+    (lambda (out)
+      (write-bytes preamble out)
+      (write-string (xexpr->string xexpr) out))))
 
 ;; Models
 (define (get-connection)
@@ -18,12 +49,10 @@
                  "rktblog.db")))
 
 (struct article
-        (id title content date-create deleted)
-        #:mutable)
+        (id title content date-create deleted))
 
 (struct comment
-        (id article-id email author website content date-create deleted)
-        #:mutable)
+        (id article-id email author website content date-create deleted))
 
 (define (vector->article vec)
   (article [vector-ref vec 0]
@@ -55,9 +84,8 @@
   (let* ([conn (get-connection)]
          [rets (query-rows 
                  conn
-                 (string-append
-                   "select * from article where deleted = 0 "
-                   "order by date_create desc limit $1, $2;")
+                 "select * from article where deleted = 0 \
+                 order by date_create desc limit $1, $2;"
                  start
                  limit)])
     (map vector->article rets)))
@@ -67,10 +95,9 @@
   (let* ([conn (get-connection)]
          [rets (query-rows 
                  conn
-                 (string-append
-                   "select * from comment where deleted= 0 "
-                   "and article_id = $1 "
-                   "order by date_create limit $2, $3;")
+                 "select * from comment where deleted= 0 \
+                 and article_id = $1 \
+                 order by date_create limit $2, $3;"
                  article-id start limit)])
     (map vector->comment rets)))
 ;(get-comments 0 100)
@@ -79,10 +106,9 @@
   (let ([conn (get-connection)])
     (query-exec 
       conn 
-      (string-append 
-        "insert into comment "
-        "(article_id,email,author,website,content) "
-        "values ($1,$2,$3,$4,$5)")
+      "insert into comment \
+      (article_id,email,author,website,content) \
+      values ($1,$2,$3,$4,$5)"
       article-id email author website content))
   )
 
@@ -96,9 +122,9 @@
 (define (render-base content)
   `(html (head
            (title "XXX")
-           (link ((rel "stylesheet")
-                  (href "/style.css")
-                  (type "text/css"))))
+           (link ([rel "stylesheet"]
+                  [href "/style.css"]
+                  [type "text/css"])))
          (body
            (div ((id "bg"))
                 (div ([id "pagewrap"])
@@ -110,9 +136,24 @@
                                "Yet another aisk's blog"))
                      (div ([id "layout"] [class "clearfix sidebar1"])
                           ,content
-                          (div ([id "sidebar"])))
+                          (div ([id "sidebar"])
+                               ,(render-sidebar)))
                      (div ([id "footer"])))))))
 
+(define (render-sidebar)
+  `(div ([class "widget"])
+        (h4 ([class "widgettitle"])
+            "I'm the sidebar")
+        (ul ([class "twitter-list"])
+          (li ([class "twitter-item"])
+               "Today's weather muhaha"
+               (em ([class "twitter-timestamp"]) "2012/6/10"))
+          (li ([class "twitter-item"])
+               "Tomorrow's weather muhaha"
+               (em ([class "twitter-timestamp"]) "2012/6/10"))
+          (li ([class "twitter-item"])
+               "The day after tomorrow's weather muhaha"
+               (em ([class "twitter-timestamp"]) "2012/6/10")))))
 
 (define (render-article a-article)
   (let* ([a-title (article-title a-article)]
@@ -131,7 +172,7 @@
                         ,(number->string (date-year a-date-create))))
                (h1 ((class "post-title"))
                    (a ([href ,a-url]) ,a-title))
-               (p ,a-content)))))
+               (p ,(render-safe a-content))))))
 
 (define (render-comment a-comment)
   `(li ([class "comment"])
@@ -205,7 +246,7 @@
 ;; View functions
 (define (root-view req)
   (let* ([articles (get-articles 0 100)])
-    (response/xexpr
+    (render-response
       (render-base `(div ([id "content"] [class "list-post"])
                          ,@(map render-article articles))))))
 
@@ -214,7 +255,9 @@
     [(equal? (request-method req) #"GET")
      (let ([a-article (get-article article-id)]
            [comments (get-comments article-id 0 100)])
-       (response/xexpr
+       (display 111111111111111111111111)
+       (display (xexpr->string (render-article a-article)))
+       (render-response
          (render-base `(div ([id "content"] [class "list-post"])
                             ,(render-article a-article)
                             ,(render-comments comments)))))]
