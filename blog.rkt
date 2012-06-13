@@ -127,7 +127,7 @@
 ;; Renders
 (define (render-base content)
   `(html (head
-           (title "XXX")
+           (title "艾斯昆的博客")
            (link ([rel "stylesheet"]
                   [href "/style.css"]
                   [type "text/css"])))
@@ -137,7 +137,7 @@
                      (div ([id "header"])
                           (div ([id "site-logo"])
                                (a ([href "/"])
-                                  "XXXXXXXXX"))
+                                  "这是一个博客"))
                           (div ([id "site-description"])
                                "Yet another aisk's blog"))
                      (div ([id "layout"] [class "clearfix sidebar1"])
