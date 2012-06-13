@@ -60,6 +60,9 @@
 (struct comment
         (id article-id email author website content date-create deleted))
 
+(struct siteinfo
+        (title description))
+
 (define (vector->article vec)
   (article [vector-ref vec 0]
            [vector-ref vec 1]
@@ -76,6 +79,9 @@
            (format-content [vector-ref vec 5])
            (seconds->date [vector-ref vec 6])
            [vector-ref vec 7]))
+
+(define (get-siteinfo)  ; TODO: get from database
+  (siteinfo "简明超魔法导论" "暨 艾斯昆的博客"))
 
 (define (get-article id)
   (let* ([conn (get-connection)]
@@ -126,8 +132,9 @@
 
 ;; Renders
 (define (render-base content)
+  (define info (get-siteinfo))
   `(html (head
-           (title "艾斯昆的博客")
+           (title ,(siteinfo-title info))
            (link ([rel "stylesheet"]
                   [href "/style.css"]
                   [type "text/css"])))
@@ -137,9 +144,9 @@
                      (div ([id "header"])
                           (div ([id "site-logo"])
                                (a ([href "/"])
-                                  "这是一个博客"))
+                                  ,(siteinfo-title info)))
                           (div ([id "site-description"])
-                               "Yet another aisk's blog"))
+                                ,(siteinfo-description info)))
                      (div ([id "layout"] [class "clearfix sidebar1"])
                           ,content
                           (div ([id "sidebar"])
