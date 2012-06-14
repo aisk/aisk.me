@@ -22,7 +22,7 @@
   (string-append
     "http://www.gravatar.com/avatar/"
     (bytes->string/utf-8 (md5 a-email))
-    "?s="
+    "?d=mm&s="
     (number->string size)))
 
 ; Hack for safe html output
