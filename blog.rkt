@@ -3,6 +3,7 @@
          (only-in xml xexpr->string)
          racket/date
          racket/pretty
+         file/md5
          web-server/servlet
          web-server/servlet-env
          web-server/dispatch
@@ -16,6 +17,13 @@
 
 (define (format-content a-content)
   (string-join (regexp-split "\n" a-content) "</p><p>"))
+
+(define (get-gravatar a-email size)
+  (string-append
+    "http://www.gravatar.com/avatar/"
+    (bytes->string/utf-8 (md5 a-email))
+    "?s="
+    (number->string size)))
 
 ; Hack for safe html output
 (define (render-safe a-xexpr)
@@ -146,7 +154,7 @@
                                (a ([href "/"])
                                   ,(siteinfo-title info)))
                           (div ([id "site-description"])
-                                ,(siteinfo-description info)))
+                               ,(siteinfo-description info)))
                      (div ([id "layout"] [class "clearfix sidebar1"])
                           ,content
                           (div ([id "sidebar"])
@@ -192,7 +200,7 @@
 (define (render-comment a-comment)
   `(li ([class "comment"])
        (p ([class "comment-author"])
-          (img ([src "/images/head_54.png"]
+          (img ([src ,(get-gravatar (comment-email a-comment) 54)]
                 [class "avatar"]
                 [width "54"]
                 [height "54"]))
