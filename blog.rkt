@@ -145,7 +145,10 @@
            (title ,(siteinfo-title info))
            (link ([rel "stylesheet"]
                   [href "/style.css"]
-                  [type "text/css"])))
+                  [type "text/css"]))
+           (link ([rel "icon"]
+                  [href "/images/Lambda_logo.png"]
+                  [type "image/png"])))
          (body
            (div ((id "bg"))
                 (div ([id "pagewrap"])
