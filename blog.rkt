@@ -143,6 +143,8 @@
   (define info (get-siteinfo))
   `(html (head
            (title ,(siteinfo-title info))
+           (meta ([property "wb:webmaste"]
+                  [conent "1a9c848973cb81a5"]))
            (link ([rel "stylesheet"]
                   [href "/style.css"]
                   [type "text/css"]))
