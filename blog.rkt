@@ -89,7 +89,7 @@
            [vector-ref vec 7]))
 
 (define (get-siteinfo)  ; TODO: get from database
-  (siteinfo "简明魔法教程" "暨 艾斯昆的博客"))
+  (siteinfo "简明魔法教程" "这里是 艾斯昆的博客"))
 
 (define (get-article id)
   (let* ([conn (get-connection)]
