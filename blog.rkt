@@ -111,7 +111,17 @@
     (map vector->article rets)))
 ;(get-articles 0 10)
 
-(define (get-comments article-id start limit)
+(define (get-comments start limit)
+  (let* ([conn (get-connection)]
+         [rets (query-rows 
+                 conn
+                 "select * from comment where deleted= 0 \
+                 order by date_create desc limit $1, $2;"
+                 start limit)])
+    (map vector->comment rets)))
+;(get-comments 0 100)
+
+(define (get-article-comments article-id start limit)
   (let* ([conn (get-connection)]
          [rets (query-rows 
                  conn
@@ -120,7 +130,7 @@
                  order by date_create limit $2, $3;"
                  article-id start limit)])
     (map vector->comment rets)))
-;(get-comments 0 100)
+;(get-article-comments 0 100)
 
 (define (add-comment article-id email author website content)
   (let ([conn (get-connection)])
@@ -165,19 +175,24 @@
                      (div ([id "footer"])))))))
 
 (define (render-sidebar)
+  (define (render-latest-comment a-comment)
+    `(li
+       (a ([href "#"])
+          (img ([src ,(get-gravatar (comment-email a-comment) 32)]
+                [class "avatar"]
+                [width "32"]
+                [height "32"])))
+       (a ([href "#"])
+          (strong ([class "comment-author"])
+            ,(comment-author a-comment))
+          ":")
+       ,(comment-content a-comment)))
   `(div ([class "widget"])
         (h4 ([class "widgettitle"])
-            "I'm the sidebar")
-        (ul ([class "twitter-list"])
-            (li ([class "twitter-item"])
-                "Today's weather muhaha"
-                (em ([class "twitter-timestamp"]) "2012/6/10"))
-            (li ([class "twitter-item"])
-                "Tomorrow's weather muhaha"
-                (em ([class "twitter-timestamp"]) "2012/6/10"))
-            (li ([class "twitter-item"])
-                "The day after tomorrow's weather muhaha"
-                (em ([class "twitter-timestamp"]) "2012/6/10")))))
+            "Recent Comments")
+        (ul ([class "recent-comments-list"])
+            ,@(map render-latest-comment (get-comments 0 5))
+            )))
 
 (define (render-article a-article only-intro?)
   (let* ([a-title (article-title a-article)]
@@ -284,7 +299,7 @@
   (cond
     [(equal? (request-method req) #"GET")
      (let ([a-article (get-article article-id)]
-           [comments (get-comments article-id 0 100)])
+           [comments (get-article-comments article-id 0 100)])
        (render-response
          (render-base `(div ([id "content"] [class "list-post"])
                             ,(render-article a-article #f)
