@@ -29,17 +29,9 @@
 (define (render-safe a-xexpr)
   (make-cdata #f #f a-xexpr))
 
-; Hack for add a dtd for a webpage
-(define (render-response a-xexpr)
-  (render-to-response
-    #:preamble #"<!DOCTYPE html PUBLIC \
-    \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \
-    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
-    a-xexpr))
-
 ; The response/xexpr eat all elements behind cdata,
 ; a hack use xexpr->string to void this.
-(define (render-to-response
+(define (render-response
           xexpr
           #:code [code 200] 
           #:message [message #"Okay"]
@@ -142,12 +134,6 @@
       article-id email author website content))
   )
 
-;; Url dispatch
-(define-values (url-dispatch site-url)
-  (dispatch-rules
-    [("") root-view]
-    [("article" (integer-arg)) article-view]))
-
 ;; Renders
 (define (render-base content)
   (define info (get-siteinfo))
@@ -184,7 +170,7 @@
                 [height "32"])))
        (a ([href "#"])
           (strong ([class "comment-author"])
-            ,(comment-author a-comment))
+                  ,(comment-author a-comment))
           ":")
        ,(comment-content a-comment)))
   `(div ([class "widget"])
@@ -284,10 +270,34 @@
                          [type "submit"]
                          [value "Post Comment"]))))))
 
+(define (render-feed articles)
+  (define (render-feed-item a-article)
+    `(item
+        (title ,(article-title a-article))
+        (link "http://www.dsa.dsa/")
+        (description ,(article-content a-article))
+        ))
+  `(rss ([version "2.0"])
+        (channel
+          (title "XXX")
+          (link "http://www.example.com")
+          (description "papapa")
+          ,@(map render-feed-item articles))))
+
+;; Url dispatch
+(define-values (url-dispatch site-url)
+  (dispatch-rules
+    [("") root-view]
+    [("feed") rss-view]
+    [("article" (integer-arg)) article-view]))
+
 ;; View functions
 (define (root-view req)
   (let* ([articles (get-articles 0 100)])
     (render-response
+      #:preamble #"<!DOCTYPE html PUBLIC \
+      \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \
+      \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
       (render-base `(div ([id "content"] [class "list-post"])
                          ,@(map render-article
                                 articles
@@ -295,20 +305,29 @@
                                   (length articles)
                                   (lambda (x) #t))))))))
 
+(define (rss-view req)
+  (define articles (get-articles 0 100))
+  (render-response
+    #:preamble #"<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+    (render-feed articles)))
+
 (define (article-view req article-id)
   (cond
     [(equal? (request-method req) #"GET")
      (let ([a-article (get-article article-id)]
            [comments (get-article-comments article-id 0 100)])
        (render-response
+         #:preamble #"<!DOCTYPE html PUBLIC \
+         \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \
+         \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
          (render-base `(div ([id "content"] [class "list-post"])
                             ,(render-article a-article #f)
                             ,(render-comments comments)))))]
-    [(equal? (request-method req) #"POST")
-     (if (can-save-comment? (request-bindings req))
-       (save-comment article-id (request-bindings req))
-       (display "xxxxxxxxxxxxxxxx!"))
-     (redirect-to (url->string (request-uri req)))]))
+     [(equal? (request-method req) #"POST")
+      (if (can-save-comment? (request-bindings req))
+        (save-comment article-id (request-bindings req))
+        (display "xxxxxxxxxxxxxxxx!"))
+      (redirect-to (url->string (request-uri req)))]))
 
 
 (define (can-save-comment? bindings)
