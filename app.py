@@ -45,5 +45,7 @@ def post(filename):
 def static(filename):
     return static_file(filename, root='static')
 
+app = bottle.app()
+
 if __name__ == '__main__':
     run(host='localhost', port=8000, debug=True, reloader=True)
