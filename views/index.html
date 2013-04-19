@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block content %}
+{% for post in posts %}
+<article>
+  <header class="entry-header">
+    <div class="date">
+      <div class="day">{{post.date.day}}</div>
+      <div class="month">{{post.date.strftime('%b')}}</div>
+    </div>
+    <h2 class="title"><a href="/post/{{post.filename}}">{{ post.title }}</a></h2>
+    <div class="meta">暂无分类</div>  
+  </header>
+  <section class="body">
+    {{ post.content }}
+  </section>
+  <footer>
+    <div class="tags">
+      <div style="clear: both;"></div>
+    </div>
+  </footer>
+</article>
+{% endfor %}
+{% endblock %}
