@@ -8,7 +8,11 @@
       <div class="month">{{post.date.strftime('%b')}}</div>
     </div>
     <h2 class="title">{{ post.title }}</h2>
-    <div class="meta">暂无分类</div>  
+    <div class="meta">  
+      <a href="/post/{{post.filename}}#comments">
+        <span class="comment-num ds-thread-count" data-thread-key="{{post.filename}}" data-count-type="comments"></span>
+      </a>
+    </div>
   </header>
   <section class="body">
     {{ post.content }}
@@ -18,7 +22,7 @@
       <div style="clear: both;"></div>
     </div>
     <!-- Duoshuo Comment BEGIN -->
-    <div class="ds-thread"></div>
+    <div class="ds-thread" data-thread-key="{{post.filename}}" data-title="{{post.title}}"></div>
     <script type="text/javascript">
     var duoshuoQuery = {short_name:"aisk"};
     (function() {

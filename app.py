@@ -39,6 +39,7 @@ def post(filename):
     content = md.convert(s)
     post = format_meta(md.Meta)
     post['content'] = content
+    post['filename'] = filename
     return template('views/post', post=post)
 
 @route('/static/<filename>')
