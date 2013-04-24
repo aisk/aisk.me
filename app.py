@@ -35,7 +35,7 @@ def index():
 def post(filename):
     f = open('posts/%s.md' %filename)
     s = f.read().decode('utf-8')
-    md = Markdown(extensions = ['meta'])
+    md = Markdown(extensions = ['meta', 'codehilite(linenums=False,guess_lang=False)'])
     content = md.convert(s)
     post = format_meta(md.Meta)
     post['content'] = content
