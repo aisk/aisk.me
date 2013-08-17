@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>  <html class="ie ie6 lte9 lte8 lte7" dir="ltr" lang="zh-CN"> <![endif]-->
+<!--[if IE 7]>     <html class="ie ie7 lte9 lte8 lte7" dir="ltr" lang="zh-CN"> <![endif]-->
+<!--[if IE 8]>     <html class="ie ie8 lte9 lte8" dir="ltr" lang="zh-CN"> <![endif]-->
+<!--[if IE 9]>     <html class="ie ie9 lte9" dir="ltr" lang="zh-CN"> <![endif]-->
+<!--[if gt IE 9]>  <html dir="ltr" lang="zh-CN"> <![endif]-->
+<!--[if !IE]><!--> <html dir="ltr" lang="zh-CN">             <!--<![endif]-->
+  <head>
+    <title>{% block title %}艾斯昆的博客{% endblock %}</title>
+    <title>艾斯昆的博客</title>
+    <!--[if lt IE 9]>
+        <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta charset="utf-8" />
+    <meta name="description" content="艾斯昆的博客"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <link rel="stylesheet" media="all" href="/static/style.css" />
+    <link rel="stylesheet" media="all" href="/static/pygments.css" />
+    <style>
+      a { color: #d3513c;}
+      a:hover { color: #bf3d28}
+      .entry-header .date { background-color: #d3513c;}
+      .reply a { background-color: #d3513c}
+      .reply a:hover { background-color: #bf3d28}
+      .comment-meta { background-color: #d3513c}
+      input, textarea { outline-color: #d3513c}
+      .archive-title {border: 3px solid #d3513c; color: #d3513c}
+      #submit, input[type="submit"] { background-color: #d3513c}
+      #aboutMe ul li a { background-color: #d3513c;}
+      #aboutMe ul li a:hover { background-color: #bf3d28;}
+    </style>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-23075420-5', 'aisk.me');
+      ga('send', 'pageview');
+    </script>
+    {% block js%}{% endblock %}
+  </head>
+
+  <body>
+    <div id="wrap">
+      <aside>
+        <h1><a href="/">艾斯昆的博客</a></h1>
+        <section id="aboutMe">
+          <p class="social">
+            <a target="_blank" href="/"><img src="http://aisk.sinaapp.com/wp-content/themes/colortype/images/icons/color/rss.png" width="32" height="32"></a>
+            <a target="_blank" href="http://github.com/aisk"><img src="http://aisk.sinaapp.com/wp-content/themes/colortype/images/icons/color/github.png" width="32" height="32"></a>
+            <a target="_blank" href="http://www.douban.com/people/aisk"><img src="http://aisk.sinaapp.com/wp-content/themes/colortype/images/icons/color/douban.png" width="32" height="32"></a>
+            <a target="_blank" href="http://weibo.com/aisk"><img src="http://aisk.sinaapp.com/wp-content/themes/colortype/images/icons/color/weibo.png" width="32" height="32"></a>
+          </p>
+          <div style="clear: both;"></div>
+        </section>
+        <div style="clear: both;"></div>
+        <section class="copyright">
+          <p>© 2013 <strong>艾斯昆的博客</strong><br>Powered by <a target="_blank" href="http://www.python.org">Python</a> &amp; <a target="_blank" href="http://zihua.li/colortype">Colortype</a></p>
+        </section>
+      </aside>
+      <div id="main">
+        <div id="posts">
+          {% block content %}
+          {% endblock %}
+        </div>
+      </div>
+      <div style="clear: both;"></div>
+    </div>
+  </body>
+</html>

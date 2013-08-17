@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}{{post.title}} - 艾斯昆的博客{% endblock %}
+{% block content %}
+<article>
+  <header class="entry-header">
+    <div class="date">
+      <div class="day">{{post.date.day}}</div>
+      <div class="month">{{post.date.strftime('%b')}}</div>
+    </div>
+    <h2 class="title">{{ post.title }}</h2>
+    <div class="meta">  
+      <a href="/post/{{post.filename}}#comments">
+        <span class="comment-num ds-thread-count" data-thread-key="{{post.filename}}" data-count-type="comments"></span>
+      </a>
+    </div>
+  </header>
+  <section class="body">
+    {{ post.content }}
+  </section>
+  <footer>
+    <div class="tags">
+      <div style="clear: both;"></div>
+    </div>
+    <div id="comments">
+      <!-- Duoshuo Comment BEGIN -->
+      <div class="ds-thread" data-thread-key="{{post.filename}}" data-title="{{post.title}}"></div>
+      <script type="text/javascript">
+      var duoshuoQuery = {short_name:"aisk"};
+      (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = 'http://static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0] 
+        || document.getElementsByTagName('body')[0]).appendChild(ds);
+      })();
+      </script>
+      <!-- Duoshuo Comment END -->
+    </div>
+  </footer>
+</article>
+{% endblock %}
