@@ -28,12 +28,12 @@
 {% endfor %}
 {% if have_prev %}
 <div class="pagination-newer">
-  <a href="/?p={{ p - 1 }}">&lt; Next</a>
+  <a href="/?p={{ p - 1 }}">&lt; Prev</a>
 </div>
 {% endif %}
 {% if have_next %}
 <div class="pagination-older">
-  <a href="/?p={{ p + 1 }}">Prev &gt;</a>
+  <a href="/?p={{ p + 1 }}">Next &gt;</a>
 </div>
 {% endif %}
 {% endblock %}
