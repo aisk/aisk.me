@@ -55,4 +55,4 @@ def static(filename):
 application = app()
 
 if __name__ == '__main__':
-    run(host='localhost', port=8000, debug=True, reloader=True)
+    run(host='localhost', port=8001, debug=True, reloader=True)
