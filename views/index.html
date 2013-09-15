@@ -1,27 +1,39 @@
 {% extends "layout.html" %}
 {% block content %}
 {% for post in posts %}
-<article>
-  <header class="entry-header">
-    <div class="date">
-      <div class="day">{{post.date.day}}</div>
-      <div class="month">{{post.date.strftime('%b')}}</div>
-    </div>
-    <h2 class="title"><a href="/post/{{post.post_id}}.html">{{ post.title }}</a></h2>
-    <div class="meta">
-      <a href="/post/{{post.post_id}}.html#comments">
-        <span class="comment-num ds-thread-count" data-thread-key="{{post.post_id}}" data-count-type="comments"></span>
-      </a>
-    </div>  
-  </header>
-  <section class="body">
-    {{ post.content }}
-  </section>
-  <footer>
-    <div class="tags">
-      <div style="clear: both;"></div>
-    </div>
-  </footer>
-</article>
+<div id="posts">
+  <article>
+    <header class="entry-header">
+      <div class="date">
+        <div class="day">{{post.date.day}}</div>
+        <div class="month">{{post.date.strftime('%b')}}</div>
+      </div>
+      <h2 class="title"><a href="/post/{{post.post_id}}.html">{{ post.title }}</a></h2>
+      <div class="meta">
+        <a href="/post/{{post.post_id}}.html#comments">
+          <span class="comment-num ds-thread-count" data-thread-key="{{post.post_id}}" data-count-type="comments"></span>
+        </a>
+      </div>  
+    </header>
+    <section class="body">
+      {{ post.content }}
+    </section>
+    <footer>
+      <div class="tags">
+        <div style="clear: both;"></div>
+      </div>
+    </footer>
+  </article>
+</div>
 {% endfor %}
+{% if have_prev %}
+<div class="pagination-newer">
+  <a href="/?p={{ p - 1 }}">&lt; Newer</a>
+</div>
+{% endif %}
+{% if have_next %}
+<div class="pagination-older">
+  <a href="/?p={{ p + 1 }}">Older &gt;</a>
+</div>
+{% endif %}
 {% endblock %}

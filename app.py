@@ -19,6 +19,11 @@ def index():
     posts = []
     md = Markdown(extensions = ['meta'])
     files = sorted(filter(lambda x: x.endswith('.md') ,os.listdir('posts')), reverse=True)
+    p = request.query.p or 1
+    p = int(p)
+    have_prev = True if p > 1 else False
+    have_next = True if len(files) > p * 5 else False
+    files = files[(p - 1) * 5 : p * 5]
     for filename in files:
         f = open('posts/%s' %filename)
         s = f.read().decode('utf-8')
@@ -29,7 +34,7 @@ def index():
         post['post_id'] = filename.split('.')[0]
         posts.append(post)
 
-    return template('views/index', posts=posts)
+    return template('views/index', locals())
 
 @route('/post/<post_id>.html')
 def post(post_id):
