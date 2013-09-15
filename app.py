@@ -46,7 +46,7 @@ def post(post_id):
 def old_post(post_id):
     if '-' in post_id:
         t = datetime.strptime('-'.join(post_id.split('-')[:-1]), '%Y-%m-%d').strftime('%s')
-        redirect('/post/' + t)
+        redirect('/post/%s.html' % t, code=301)
 
 @route('/static/<filename>')
 def static(filename):
