@@ -26,21 +26,27 @@ def index():
         content = md.convert(s)
         post = format_meta(md.Meta)
         post['content'] = get_content_intro(content)
-        post['filename'] = filename.split('.')[0]
+        post['post_id'] = filename.split('.')[0]
         posts.append(post)
 
     return template('views/index', posts=posts)
 
-@route('/post/<filename>')
-def post(filename):
-    f = open('posts/%s.md' %filename)
+@route('/post/<post_id>.html')
+def post(post_id):
+    f = open('posts/%s.md' % post_id)
     s = f.read().decode('utf-8')
     md = Markdown(extensions = ['meta', 'codehilite(linenums=False,guess_lang=False)'])
     content = md.convert(s)
     post = format_meta(md.Meta)
     post['content'] = content
-    post['filename'] = filename
+    post['post_id'] = post_id
     return template('views/post', post=post)
+
+@route('/post/<post_id>')
+def old_post(post_id):
+    if '-' in post_id:
+        t = datetime.strptime('-'.join(post_id.split('-')[:-1]), '%Y-%m-%d').strftime('%s')
+        redirect('/post/' + t)
 
 @route('/static/<filename>')
 def static(filename):
