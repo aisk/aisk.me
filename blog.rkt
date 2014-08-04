@@ -7,7 +7,7 @@
          web-server/servlet
          web-server/servlet-env
          web-server/dispatch
-         (planet ryanc/db:1:5)) ; Fuck the db module
+         db)
 
 ;; Utils
 (define cur-path (find-system-path 'orig-dir))
