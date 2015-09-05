@@ -1,0 +1,362 @@
+#lang racket
+(require (only-in xml make-cdata)
+         (only-in xml xexpr->string)
+         racket/date
+         racket/pretty
+         file/md5
+         web-server/servlet
+         web-server/servlet-env
+         web-server/dispatch
+         db)
+
+;; Utils
+(define cur-path (find-system-path 'orig-dir))
+
+(define (get-intro a-content)
+  (first (regexp-split #rx"<!--more-->" a-content)))
+
+(define (format-content a-content)
+  (string-join (regexp-split "\n" a-content) "</p><p>"))
+
+(define (get-gravatar a-email size)
+  (string-append
+    "http://www.gravatar.com/avatar/"
+    (bytes->string/utf-8 (md5 a-email))
+    "?d=mm&s="
+    (number->string size)))
+
+; Hack for safe html output
+(define (render-safe a-xexpr)
+  (make-cdata #f #f a-xexpr))
+
+; The response/xexpr eat all elements behind cdata,
+; a hack use xexpr->string to void this.
+(define (render-response
+          xexpr
+          #:code [code 200] 
+          #:message [message #"Okay"]
+          #:seconds [seconds (current-seconds)]
+          #:mime-type [mime-type TEXT/HTML-MIME-TYPE]
+          #:cookies [cooks empty]
+          #:headers [hdrs empty]
+          #:preamble [preamble #""])
+  (response
+    code message seconds mime-type 
+    (append hdrs (map cookie->header cooks))
+    (lambda (out)
+      (write-bytes preamble out)
+      (write-string (xexpr->string xexpr) out))))
+
+;; Models
+(define (get-connection)
+  (sqlite3-connect
+    #:database (string-append
+                 (path->string cur-path)
+                 "rktblog.db")))
+
+(struct article
+        (id title content date-create deleted))
+
+(struct comment
+        (id article-id email author website content date-create deleted))
+
+(struct siteinfo
+        (title description))
+
+(define (vector->article vec)
+  (article [vector-ref vec 0]
+           [vector-ref vec 1]
+           (format-content [vector-ref vec 2])
+           (seconds->date [vector-ref vec 3])
+           [vector-ref vec 4]))
+
+(define (vector->comment vec)
+  (comment [vector-ref vec 0]
+           [vector-ref vec 1]
+           [vector-ref vec 2]
+           [vector-ref vec 3]
+           [vector-ref vec 4]
+           (format-content [vector-ref vec 5])
+           (seconds->date [vector-ref vec 6])
+           [vector-ref vec 7]))
+
+(define (get-siteinfo)  ; TODO: get from database
+  (siteinfo "简明魔法教程" "这里是 艾斯昆的博客"))
+
+(define (get-article id)
+  (let* ([conn (get-connection)]
+         [ret (query-row 
+                conn
+                "select * from article where id = $1"
+                id)])
+    (vector->article ret)))
+;(get-article 1)
+
+(define (get-articles start limit)
+  (let* ([conn (get-connection)]
+         [rets (query-rows 
+                 conn
+                 "select * from article where deleted = 0 \
+                 order by date_create desc limit $1, $2;"
+                 start
+                 limit)])
+    (map vector->article rets)))
+;(get-articles 0 10)
+
+(define (get-comments start limit)
+  (let* ([conn (get-connection)]
+         [rets (query-rows 
+                 conn
+                 "select * from comment where deleted= 0 \
+                 order by date_create desc limit $1, $2;"
+                 start limit)])
+    (map vector->comment rets)))
+;(get-comments 0 100)
+
+(define (get-article-comments article-id start limit)
+  (let* ([conn (get-connection)]
+         [rets (query-rows 
+                 conn
+                 "select * from comment where deleted= 0 \
+                 and article_id = $1 \
+                 order by date_create limit $2, $3;"
+                 article-id start limit)])
+    (map vector->comment rets)))
+;(get-article-comments 0 100)
+
+(define (add-comment article-id email author website content)
+  (let ([conn (get-connection)])
+    (query-exec 
+      conn 
+      "insert into comment \
+      (article_id,email,author,website,content) \
+      values ($1,$2,$3,$4,$5)"
+      article-id email author website content))
+  )
+
+;; Renders
+(define (render-base content)
+  (define info (get-siteinfo))
+  `(html (head
+           (title ,(siteinfo-title info))
+           (link ([rel "stylesheet"]
+                  [href "/style.css"]
+                  [type "text/css"]))
+           (link ([rel "icon"]
+                  [href "/images/Lambda_logo.png"]
+                  [type "image/png"])))
+         (body
+           (div ((id "bg"))
+                (div ([id "pagewrap"])
+                     (div ([id "header"])
+                          (div ([id "site-logo"])
+                               (a ([href "/"])
+                                  ,(siteinfo-title info)))
+                          (div ([id "site-description"])
+                               ,(siteinfo-description info)))
+                     (div ([id "layout"] [class "clearfix sidebar1"])
+                          ,content
+                          (div ([id "sidebar"])
+                               ,(render-sidebar)))
+                     (div ([id "footer"])))))))
+
+(define (render-sidebar)
+  (define (render-latest-comment a-comment)
+    `(li
+       (a ([href "#"])
+          (img ([src ,(get-gravatar (comment-email a-comment) 32)]
+                [class "avatar"]
+                [width "32"]
+                [height "32"])))
+       (a ([href "#"])
+          (strong ([class "comment-author"])
+                  ,(comment-author a-comment))
+          ":")
+       ,(comment-content a-comment)))
+  `(div ([class "widget"])
+        (h4 ([class "widgettitle"])
+            "Recent Comments")
+        (ul ([class "recent-comments-list"])
+            ,@(map render-latest-comment (get-comments 0 5))
+            )))
+
+(define (render-article a-article only-intro?)
+  (let* ([a-title (article-title a-article)]
+         [a-content (article-content a-article)]
+         [a-date-create (article-date-create a-article)]
+         [a-url (string-append
+                  "/article/"
+                  (number->string (article-id a-article)))])
+    `(div ([class "post clearfix"])
+          (div ([class "post-content"])
+               (p ((class "post-date"))
+                  (span ((class "day"))
+                        ,(number->string (date-day a-date-create)))
+                  (span ((class "month")) "May")
+                  (span ((class "year"))
+                        ,(number->string (date-year a-date-create))))
+               (h1 ((class "post-title"))
+                   (a ([href ,a-url]) ,a-title))
+               (p ,(render-safe
+                     (if only-intro? (get-intro a-content)
+                       a-content)))))))
+
+(define (render-comment a-comment)
+  `(li ([class "comment"])
+       (p ([class "comment-author"])
+          (img ([src ,(get-gravatar (comment-email a-comment) 54)]
+                [class "avatar"]
+                [width "54"]
+                [height "54"]))
+          (cite (a ([href ,(comment-website a-comment)]
+                    [rel "external nofollow"]
+                    [class "url"])
+                   ,(comment-author a-comment)))
+          (br)
+          (small ([class "comment-time"])
+                 (strong "Jan 17, 2011")
+                 " @ 07:27:52"))
+       (div ([class "commententry"])
+            (p ,(comment-content a-comment))
+            )
+       ))
+
+(define (render-comments comments)
+  `(div ([id "comments"] [class "commentwrap"])
+        (h4 ([class "comment-title"]) "Comments")
+        (ol ([class "commentlist"])
+            ,@(map render-comment comments))
+        ,(render-commentform)
+        ))
+
+(define (render-commentform)
+  `(div ([id "respond"])
+        (h3 ([id "reply-title"]) "Leave a Reply")
+        (form ([action ""]
+               [method "post"]
+               [id "commentform"])
+              (p ([class "comment-form-author"])
+                 (input ([id "author"]
+                         [name "author"]
+                         [type "text"]
+                         [size "30"]
+                         [required ""])
+                        (label ([for "author"]) "Your Name"))
+                 (span "*"))
+              (p ([class "comment-form-email"])
+                 (input ([id "email"]
+                         [name "email"]
+                         [type "email"]
+                         [size "30"]
+                         [maxlength "50"]
+                         [required ""])
+                        (label ([for "email"]) "Your Email"))
+                 (span "*"))
+              (p ([class "comment-form-url"])
+                 (input ([id "website"]
+                         [name "website"]
+                         [type "url"]
+                         [size "30"])
+                        (label ([for "url"]) "Your Website")))
+              (p ([class "comment-form-comment"])
+                 (textarea ([id "comment"]
+                            [name "comment"]
+                            [cols "45"]
+                            [rows "8"]
+                            [required ""]) ""))
+              (p ([class "form-submit"])
+                 (input ([id "submit"]
+                         [name "submit"]
+                         [type "submit"]
+                         [value "Post Comment"]))))))
+
+(define (render-feed articles)
+  (define (render-feed-item a-article)
+    `(item
+        (title ,(article-title a-article))
+        (link "http://www.dsa.dsa/")
+        (description ,(article-content a-article))
+        ))
+  `(rss ([version "2.0"])
+        (channel
+          (title "XXX")
+          (link "http://www.example.com")
+          (description "papapa")
+          ,@(map render-feed-item articles))))
+
+;; Url dispatch
+(define-values (url-dispatch site-url)
+  (dispatch-rules
+    [("") root-view]
+    [("feed") rss-view]
+    [("article" (integer-arg)) article-view]))
+
+;; View functions
+(define (root-view req)
+  (let* ([articles (get-articles 0 100)])
+    (render-response
+      #:preamble #"<!DOCTYPE html PUBLIC \
+      \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \
+      \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+      (render-base `(div ([id "content"] [class "list-post"])
+                         ,@(map render-article
+                                articles
+                                (build-list
+                                  (length articles)
+                                  (lambda (x) #t))))))))
+
+(define (rss-view req)
+  (define articles (get-articles 0 100))
+  (render-response
+    #:preamble #"<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+    (render-feed articles)))
+
+(define (article-view req article-id)
+  (cond
+    [(equal? (request-method req) #"GET")
+     (let ([a-article (get-article article-id)]
+           [comments (get-article-comments article-id 0 100)])
+       (render-response
+         #:preamble #"<!DOCTYPE html PUBLIC \
+         \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \
+         \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+         (render-base `(div ([id "content"] [class "list-post"])
+                            ,(render-article a-article #f)
+                            ,(render-comments comments)))))]
+     [(equal? (request-method req) #"POST")
+      (if (can-save-comment? (request-bindings req))
+        (save-comment article-id (request-bindings req))
+        (display "xxxxxxxxxxxxxxxx!"))
+      (redirect-to (url->string (request-uri req)))]))
+
+
+(define (can-save-comment? bindings)
+  (and (exists-binding? 'author bindings)
+       (exists-binding? 'email bindings)
+       (exists-binding? 'website bindings)
+       (exists-binding? 'comment bindings)))
+
+(define (save-comment article-id bindings)
+  (add-comment
+    article-id
+    (extract-binding/single 'email bindings)
+    (extract-binding/single 'author bindings)
+    (extract-binding/single 'website bindings)
+    (extract-binding/single 'comment bindings)))
+
+;; Main
+(define (start req)
+  (display (string-append
+             (date->string (current-date))
+             ": "
+             (url->string (request-uri req)) 
+             "\n"))
+  (url-dispatch req))
+
+(serve/servlet start
+               #:port 8080
+               #:servlet-regexp #rx""
+               #:extra-files-paths (list
+                                     (build-path cur-path "static"))
+               #:launch-browser? #f)
+
